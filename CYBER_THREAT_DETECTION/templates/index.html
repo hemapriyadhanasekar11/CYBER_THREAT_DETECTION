@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Intrusion Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<div class="container">
+    <h1>CYBER SECURITY</h1>
+    <h2>Network Intrusion Detection System</h2>
+    <p>Transformer-Based Encrypted Traffic Analysis</p>
+
+    <div class="card">
+        <h3>NETWORK MONITORING DASHBOARD</h3>
+
+        <div class="status-box">
+            <p>Monitoring Status</p>
+            <h2 id="monitorStatus">STOPPED</h2>
+        </div>
+
+        <div class="buttons">
+            <button id="startBtn" onclick="startMonitoring()">START MONITORING</button>
+            <button id="stopBtn" onclick="stopMonitoring()">STOP MONITORING</button>
+        </div>
+
+        <div class="result">
+            <h3>LIVE NETWORK ANALYSIS</h3>
+            <p>Packets Captured: <span id="packets">0</span></p>
+            <p>Network Status: <span id="networkStatus">Waiting...</span></p>
+            <p>Intrusion Detection: <span id="intrusionStatus">Not Started</span></p>
+            <p>Packet Rate: <span id="packetRate">0</span> /sec</p>
+        </div>
+
+        <div class="result">
+            <h3>TRAFFIC PREDICTION OUTPUT</h3>
+            <p>Prediction Result:</p>
+            <h2 id="predictionResult">Waiting for prediction...</h2>
+            <p id="predictionMessage">Start monitoring to view the result.</p>
+        </div>
+    </div>
+    <footer>AI Inspired Network Security Monitoring</footer>
+</div>
+
+<script>
+let pollTimer = null;
+
+function startMonitoring() {
+    fetch('/start', { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("monitorStatus").innerText = data.status;
+        document.getElementById("networkStatus").innerText = "Monitoring Started";
+        document.getElementById("intrusionStatus").innerText = "Analysing Traffic";
+        document.getElementById("predictionMessage").innerText = "Analysing live traffic...";
+
+        // Pazhaya timer irundha niruthidu
+        if (pollTimer) clearInterval(pollTimer);
+
+        // ITHU THAN MAIN FIX - 1 sec ku oru thadava stats kekkanum
+        pollTimer = setInterval(updateStats, 1000);
+        updateStats(); // Udane oru thadava kekkanum
+    })
+    .catch(error => {
+        document.getElementById("networkStatus").innerText = "Error connecting to server";
+        console.error(error);
+    });
+}
+
+function stopMonitoring() {
+    fetch('/stop', { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("monitorStatus").innerText = data.status;
+        document.getElementById("networkStatus").innerText = "Monitoring Stopped";
+        document.getElementById("intrusionStatus").innerText = "Monitoring Stopped";
+        document.getElementById("predictionResult").innerText = "Monitoring Stopped";
+        document.getElementById("predictionMessage").innerText = "Start monitoring to view the result.";
+
+        // Polling ah niruthidu - illa na odite irukkum
+        if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    })
+    .catch(error => console.error(error));
+}
+
+// Stats + Prediction ah rendu serthu edukura function
+async function updateStats() {
+    try {
+        const res = await fetch('/stats');
+        const data = await res.json();
+        document.getElementById("packets").innerText = data.packets;
+        document.getElementById("networkStatus").innerText = data.network;
+        document.getElementById("intrusionStatus").innerText = data.intrusion;
+        if (document.getElementById("packetRate")) {
+            document.getElementById("packetRate").innerText = data.packet_rate || 0;
+        }
+
+        const pres = await fetch('/predict');
+        const pdata = await pres.json();
+        document.getElementById("predictionResult").innerText = pdata.prediction;
+        document.getElementById("predictionMessage").innerText = "Confidence: " + pdata.confidence + "% | Packet Rate: " + pdata.packet_rate + "/sec";
+    } catch (e) {
+        console.log("Polling error", e);
+    }
+}
+</script>
+
+</body>
+</html>
